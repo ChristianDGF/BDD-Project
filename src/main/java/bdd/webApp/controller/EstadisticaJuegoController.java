@@ -5,9 +5,9 @@ import bdd.webApp.model.EstadisticaJuegoId;
 import bdd.webApp.repository.EstadisticaJuegoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/estadisticas-juego")
@@ -20,43 +20,38 @@ public class EstadisticaJuegoController {
         this.estadisticaJuegoRepository = estadisticaJuegoRepository;
     }
 
+    // Listar estadísticas de un juego específico
     @GetMapping
-    public List<EstadisticaJuego> listar() {
-        return estadisticaJuegoRepository.findAll();
+    public List<EstadisticaJuego> listarPorJuego(@RequestParam("codJuego") Integer codJuego) {
+        return estadisticaJuegoRepository.findByIdCodJuego(codJuego);
     }
 
-    @GetMapping("/juego/{codJuego}")
-    public List<EstadisticaJuego> listarPorJuego(@PathVariable Integer codJuego) {
-        // Si quieres filtrar por juego, crea un método custom en el repo.
-        return estadisticaJuegoRepository.findAll()
-                .stream()
-                .filter(e -> e.getId().getCodJuego().equals(codJuego))
-                .toList();
-    }
-
+    // Crear / actualizar una estadística para (juego, jugador, tipo)
     @PostMapping
-    public EstadisticaJuego crear(@RequestBody EstadisticaJuego estadisticaJuego) {
-        return estadisticaJuegoRepository.save(estadisticaJuego);
+    @ResponseStatus(HttpStatus.CREATED)
+    public EstadisticaJuego crearOActualizar(@RequestBody EstadisticaJuego payload) {
+        if (payload.getId() == null) {
+            throw new IllegalArgumentException("Se requiere el ID completo (codJuego, codEstadistica, codJugador)");
+        }
+
+        EstadisticaJuegoId id = payload.getId();
+        Optional<EstadisticaJuego> existenteOpt = estadisticaJuegoRepository.findById(id);
+
+        if (existenteOpt.isPresent()) {
+            EstadisticaJuego existente = existenteOpt.get();
+            existente.setCantidad(payload.getCantidad());
+            return estadisticaJuegoRepository.save(existente);
+        } else {
+            return estadisticaJuegoRepository.save(payload);
+        }
     }
 
-    @GetMapping("/detalle")
-    public EstadisticaJuego obtener(
-            @RequestParam Integer codJuego,
-            @RequestParam Integer codEstadistica,
-            @RequestParam Integer codJugador
-    ) {
-        EstadisticaJuegoId id = new EstadisticaJuegoId(codJuego, codEstadistica, codJugador);
-        return estadisticaJuegoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estadística de juego no encontrada"));
-    }
-
-    @DeleteMapping
+    // Eliminar una estadística puntual
+    @DeleteMapping("/{codJuego}/{codEstadistica}/{codJugador}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminar(
-            @RequestParam Integer codJuego,
-            @RequestParam Integer codEstadistica,
-            @RequestParam Integer codJugador
-    ) {
+    public void eliminar(@PathVariable Integer codJuego,
+                         @PathVariable Integer codEstadistica,
+                         @PathVariable Integer codJugador) {
         EstadisticaJuegoId id = new EstadisticaJuegoId(codJuego, codEstadistica, codJugador);
         estadisticaJuegoRepository.deleteById(id);
     }

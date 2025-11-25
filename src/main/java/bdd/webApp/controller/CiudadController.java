@@ -32,6 +32,8 @@ public class CiudadController {
 
     @PostMapping
     public Ciudad crear(@RequestBody Ciudad ciudad) {
+        // ignoramos cualquier codCiudad que venga; JPA/DB generarán uno nuevo
+        ciudad.setCodCiudad(null);
         return ciudadRepository.save(ciudad);
     }
 
@@ -50,3 +52,4 @@ public class CiudadController {
         ciudadRepository.deleteById(id);
     }
 }
+

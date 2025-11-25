@@ -1,53 +1,41 @@
 package bdd.webApp.controller;
 
-import bdd.webApp.model.Estadistica;
-import bdd.webApp.repository.EstadisticaRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import bdd.webApp.model.Juego;
+import bdd.webApp.repository.JuegoRepository;
+import bdd.webApp.service.EstadisticaService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/estadisticas")
-@CrossOrigin(origins = "*")
+@Controller
 public class EstadisticaController {
 
-    private final EstadisticaRepository estadisticaRepository;
+    private final JuegoRepository juegoRepository;
+    private final EstadisticaService estadisticaService;
 
-    public EstadisticaController(EstadisticaRepository estadisticaRepository) {
-        this.estadisticaRepository = estadisticaRepository;
+    public EstadisticaController(JuegoRepository juegoRepository,
+                                  EstadisticaService estadisticaService) {
+        this.juegoRepository = juegoRepository;
+        this.estadisticaService = estadisticaService;
     }
 
-    @GetMapping
-    public List<Estadistica> listar() {
-        return estadisticaRepository.findAll();
-    }
+    @GetMapping("/estadisticas")
+    public String verEstadisticas(@RequestParam(name = "codJuego", required = false) Integer codJuego,
+                                  Model model) {
 
-    @GetMapping("/{id}")
-    public Estadistica obtener(@PathVariable Integer id) {
-        return estadisticaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estadística no encontrada"));
-    }
+        // Lista de juegos para el combo
+        List<Juego> juegos = juegoRepository.findAll();
+        model.addAttribute("juegos", juegos);
 
-    @PostMapping
-    public Estadistica crear(@RequestBody Estadistica estadistica) {
-        return estadisticaRepository.save(estadistica);
-    }
+        if (codJuego != null) {
+            List<String> lineas = estadisticaService.obtenerEstadisticasJuego(codJuego);
+            model.addAttribute("lineas", lineas);
+            model.addAttribute("juegoSeleccionado", codJuego);
+        }
 
-    @PutMapping("/{id}")
-    public Estadistica actualizar(@PathVariable Integer id, @RequestBody Estadistica estadistica) {
-        Estadistica existente = estadisticaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estadística no encontrada"));
-
-        existente.setDescripcion(estadistica.getDescripcion());
-        existente.setValor(estadistica.getValor());
-        return estadisticaRepository.save(existente);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminar(@PathVariable Integer id) {
-        estadisticaRepository.deleteById(id);
+        return "estadisticas"; // templates/estadisticas.html
     }
 }

@@ -32,6 +32,7 @@ public class EquipoController {
 
     @PostMapping
     public Equipo crear(@RequestBody Equipo equipo) {
+        equipo.setCodEquipo(null); // ID lo genera la BD
         return equipoRepository.save(equipo);
     }
 
@@ -42,6 +43,7 @@ public class EquipoController {
 
         existente.setNombre(equipo.getNombre());
         existente.setCodCiudad(equipo.getCodCiudad());
+
         return equipoRepository.save(existente);
     }
 

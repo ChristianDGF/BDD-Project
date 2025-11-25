@@ -32,6 +32,7 @@ public class JuegoController {
 
     @PostMapping
     public Juego crear(@RequestBody Juego juego) {
+        juego.setCodJuego(null); // ID lo genera la BD
         return juegoRepository.save(juego);
     }
 
@@ -44,6 +45,7 @@ public class JuegoController {
         existente.setEquipoLocal(juego.getEquipoLocal());
         existente.setEquipoVisitante(juego.getEquipoVisitante());
         existente.setFecha(juego.getFecha());
+
         return juegoRepository.save(existente);
     }
 

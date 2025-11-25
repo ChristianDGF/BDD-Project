@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Equipos</title>
+
+    <!-- Bootstrap 5 -->
+    <link th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css}"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+
+    <style>
+        body {
+            background-color: #f5f7fb;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .card {
+            border-radius: 0.8rem;
+        }
+        .table thead {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f5ff;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">BasketDB</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarContent" aria-controls="navbarContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/ciudades}">Ciudades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/equipos}">Equipos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/juegos}">Juegos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/jugadores}">Jugadores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/captura-estadisticas}">Captura Estadísticas</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+
+    <div class="row mb-4">
+        <!-- Formulario -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" id="formTitle">Registrar Equipo</h5>
+                    <small class="text-muted">Los códigos se generan automáticamente.</small>
+                </div>
+                <div class="card-body">
+                    <form id="equipoForm" class="row g-3">
+                        <!-- ID oculto para edición -->
+                        <input type="hidden" id="codEquipo" name="codEquipo">
+
+                        <div class="col-12">
+                            <label for="nombre" class="form-label">Nombre del equipo</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   placeholder="Ej. Tigres del Norte" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="codCiudad" class="form-label">Ciudad</label>
+                            <select id="codCiudad" name="codCiudad" class="form-select" required>
+                                <option value="" selected disabled>Seleccione una ciudad...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <span id="btnText">Guardar</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnLimpiar">
+                                Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Listado de Equipos</h5>
+                    <button class="btn btn-sm btn-outline-primary" type="button" onclick="cargarEquipos()">
+                        Recargar
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead>
+                            <tr>
+                                <th class="text-center" style="width: 10%;">ID</th>
+                                <th>Nombre</th>
+                                <th>Ciudad</th>
+                                <th class="text-center" style="width: 25%;">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="equiposTableBody">
+                            <!-- Se llena por JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 text-muted small" id="estadoTabla">
+                        Cargando equipos...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<script>
+    const apiEquipos = '/api/equipos';
+    const apiCiudades = '/api/ciudades';
+
+    // Mapa para mostrar el nombre de la ciudad: { codCiudad: "Nombre" }
+    const ciudadesMap = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarCiudadesSelect();
+        cargarEquipos();
+
+        document.getElementById('equipoForm').addEventListener('submit', guardarEquipo);
+        document.getElementById('btnLimpiar').addEventListener('click', limpiarFormulario);
+    });
+
+    function cargarCiudadesSelect() {
+        fetch(apiCiudades)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar ciudades');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const select = document.getElementById('codCiudad');
+                select.innerHTML = '<option value="" disabled selected>Seleccione una ciudad...</option>';
+
+                data.forEach(c => {
+                    ciudadesMap[c.codCiudad] = c.nombre;
+
+                    const option = document.createElement('option');
+                    option.value = c.codCiudad;
+                    option.textContent = c.nombre;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error(error);
+                alert('No se pudieron cargar las ciudades.');
+            });
+    }
+
+    function cargarEquipos() {
+        const estado = document.getElementById('estadoTabla');
+        estado.textContent = 'Cargando equipos...';
+
+        fetch(apiEquipos)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar equipos');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const tbody = document.getElementById('equiposTableBody');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    estado.textContent = 'No hay equipos registrados.';
+                } else {
+                    estado.textContent = `Total de equipos: ${data.length}`;
+                }
+
+                data.forEach(equipo => {
+                    const tr = document.createElement('tr');
+
+                    const tdId = document.createElement('td');
+                    tdId.classList.add('text-center', 'fw-semibold');
+                    tdId.textContent = equipo.codEquipo;
+
+                    const tdNombre = document.createElement('td');
+                    tdNombre.textContent = equipo.nombre;
+
+                    const tdCiudad = document.createElement('td');
+                    const nombreCiudad = ciudadesMap[equipo.codCiudad] || `ID ${equipo.codCiudad}`;
+                    tdCiudad.textContent = nombreCiudad;
+
+                    const tdAcciones = document.createElement('td');
+                    tdAcciones.classList.add('text-center');
+
+                    const btnEditar = document.createElement('button');
+                    btnEditar.textContent = 'Editar';
+                    btnEditar.className = 'btn btn-sm btn-outline-primary me-2';
+                    btnEditar.onclick = () => editarEquipo(equipo);
+
+                    const btnEliminar = document.createElement('button');
+                    btnEliminar.textContent = 'Eliminar';
+                    btnEliminar.className = 'btn btn-sm btn-outline-danger';
+                    btnEliminar.onclick = () => eliminarEquipo(equipo.codEquipo);
+
+                    tdAcciones.appendChild(btnEditar);
+                    tdAcciones.appendChild(btnEliminar);
+
+                    tr.appendChild(tdId);
+                    tr.appendChild(tdNombre);
+                    tr.appendChild(tdCiudad);
+                    tr.appendChild(tdAcciones);
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById('estadoTabla').textContent =
+                    'Ocurrió un error al cargar los equipos.';
+            });
+    }
+
+    function guardarEquipo(event) {
+        event.preventDefault();
+
+        const codEquipo = document.getElementById('codEquipo').value;
+        const nombre = document.getElementById('nombre').value.trim();
+        const codCiudad = document.getElementById('codCiudad').value;
+
+        if (!nombre) {
+            alert('El nombre del equipo es obligatorio.');
+            return;
+        }
+
+        if (!codCiudad) {
+            alert('Debe seleccionar una ciudad.');
+            return;
+        }
+
+        const equipo = {
+            nombre: nombre,
+            codCiudad: Number(codCiudad)
+        };
+
+        let url = apiEquipos;
+        let method = 'POST';
+
+        if (codEquipo) {
+            url = `${apiEquipos}/${codEquipo}`;
+            method = 'PUT';
+        }
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(equipo)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al guardar el equipo');
+                }
+                return response.json();
+            })
+            .then(() => {
+                const msg = codEquipo ? 'Equipo actualizado correctamente' : 'Equipo creado correctamente';
+                alert(msg);
+                limpiarFormulario();
+                cargarEquipos();
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Ocurrió un error al guardar el equipo');
+            });
+    }
+
+    function editarEquipo(equipo) {
+        document.getElementById('codEquipo').value = equipo.codEquipo;
+        document.getElementById('nombre').value = equipo.nombre;
+        document.getElementById('codCiudad').value = equipo.codCiudad;
+
+        document.getElementById('formTitle').textContent = 'Editar Equipo';
+        document.getElementById('btnText').textContent = 'Actualizar';
+    }
+
+    function eliminarEquipo(codEquipo) {
+        if (!confirm('¿Seguro que deseas eliminar este equipo?')) {
+            return;
+        }
+
+        fetch(`${apiEquipos}/${codEquipo}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (!response.ok && response.status !== 204) {
+                    throw new Error('Error al eliminar el equipo');
+                }
+                alert('Equipo eliminado correctamente');
+                cargarEquipos();
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Ocurrió un error al eliminar el equipo');
+            });
+    }
+
+    function limpiarFormulario() {
+        document.getElementById('equipoForm').reset();
+        document.getElementById('codEquipo').value = '';
+        document.getElementById('formTitle').textContent = 'Registrar Equipo';
+        document.getElementById('btnText').textContent = 'Guardar';
+    }
+</script>
+
+</body>
+</html>

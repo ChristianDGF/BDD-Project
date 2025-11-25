@@ -1,4 +1,4 @@
-package bdd.webApp;
+package bdd.webApp.controller;
 
 import bdd.webApp.model.Jugador;
 import bdd.webApp.repository.JugadorRepository;
@@ -32,6 +32,7 @@ public class JugadorController {
 
     @PostMapping
     public Jugador crear(@RequestBody Jugador jugador) {
+        jugador.setCodJugador(null); // ID lo genera la BD
         return jugadorRepository.save(jugador);
     }
 
@@ -48,6 +49,7 @@ public class JugadorController {
         existente.setFechaNacimiento(jugador.getFechaNacimiento());
         existente.setNumero(jugador.getNumero());
         existente.setCodEquipo(jugador.getCodEquipo());
+
         return jugadorRepository.save(existente);
     }
 

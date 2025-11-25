@@ -7,14 +7,24 @@ import jakarta.persistence.*;
 public class Estadistica {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CodEstadistica")
     private Integer codEstadistica;
 
-    @Column(name = "Descripcion", length = 100)
+    @Column(name = "Descripcion")
     private String descripcion;
 
     @Column(name = "Valor")
     private Integer valor;
+
+    public Estadistica() {
+    }
+
+    public Estadistica(Integer codEstadistica, String descripcion, Integer valor) {
+        this.codEstadistica = codEstadistica;
+        this.descripcion = descripcion;
+        this.valor = valor;
+    }
 
     public Integer getCodEstadistica() {
         return codEstadistica;

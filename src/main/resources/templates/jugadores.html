@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Jugadores</title>
+
+    <link th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css}"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+
+    <style>
+        body {
+            background-color: #f5f7fb;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .card {
+            border-radius: 0.8rem;
+        }
+        .table thead {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f5ff;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">BasketDB</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarContent" aria-controls="navbarContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/ciudades}">Ciudades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/equipos}">Equipos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/juegos}">Juegos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/jugadores}">Jugadores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/captura-estadisticas}">Captura Estadísticas</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+
+    <div class="row mb-4">
+        <!-- Formulario -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" id="formTitle">Registrar Jugador</h5>
+                    <small class="text-muted">Los códigos se generan automáticamente.</small>
+                </div>
+                <div class="card-body">
+                    <form id="jugadorForm" class="row g-3">
+                        <input type="hidden" id="codJugador" name="codJugador">
+
+                        <div class="col-6">
+                            <label for="nombre1" class="form-label">Primer nombre</label>
+                            <input type="text" class="form-control" id="nombre1" name="nombre1" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="nombre2" class="form-label">Segundo nombre</label>
+                            <input type="text" class="form-control" id="nombre2" name="nombre2">
+                        </div>
+
+                        <div class="col-6">
+                            <label for="apellido1" class="form-label">Primer apellido</label>
+                            <input type="text" class="form-control" id="apellido1" name="apellido1" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="apellido2" class="form-label">Segundo apellido</label>
+                            <input type="text" class="form-control" id="apellido2" name="apellido2">
+                        </div>
+
+                        <div class="col-6">
+                            <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                            <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento" required>
+                        </div>
+
+                        <div class="col-6">
+                            <label for="numero" class="form-label">Número de camiseta</label>
+                            <input type="number" class="form-control" id="numero" name="numero" min="0" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="codCiudadNacimiento" class="form-label">Ciudad de nacimiento</label>
+                            <select id="codCiudadNacimiento" name="codCiudadNacimiento" class="form-select" required>
+                                <option value="" disabled selected>Seleccione una ciudad...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="codEquipo" class="form-label">Equipo</label>
+                            <select id="codEquipo" name="codEquipo" class="form-select" required>
+                                <option value="" disabled selected>Seleccione un equipo...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <span id="btnText">Guardar</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnLimpiar">
+                                Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Listado de Jugadores</h5>
+                    <button class="btn btn-sm btn-outline-primary" type="button" onclick="cargarJugadores()">
+                        Recargar
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead>
+                            <tr>
+                                <th class="text-center" style="width: 8%;">ID</th>
+                                <th>Jugador</th>
+                                <th>#</th>
+                                <th>Equipo</th>
+                                <th>Ciudad Nac.</th>
+                                <th>Fecha Nac.</th>
+                                <th class="text-center" style="width: 20%;">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="jugadoresTableBody">
+                            <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 text-muted small" id="estadoTabla">
+                        Cargando jugadores...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<script>
+    const apiJugadores = '/api/jugadores';
+    const apiCiudades  = '/api/ciudades';
+    const apiEquipos   = '/api/equipos';
+
+    const ciudadesMap = {}; // { codCiudad: nombre }
+    const equiposMap  = {}; // { codEquipo: nombre }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarCiudades();
+        cargarEquipos();
+        cargarJugadores();
+
+        document.getElementById('jugadorForm').addEventListener('submit', guardarJugador);
+        document.getElementById('btnLimpiar').addEventListener('click', limpiarFormulario);
+    });
+
+    function cargarCiudades() {
+        fetch(apiCiudades)
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar ciudades');
+                return r.json();
+            })
+            .then(data => {
+                const select = document.getElementById('codCiudadNacimiento');
+                select.innerHTML = '<option value="" disabled selected>Seleccione una ciudad...</option>';
+
+                data.forEach(c => {
+                    ciudadesMap[c.codCiudad] = c.nombre;
+                    const opt = document.createElement('option');
+                    opt.value = c.codCiudad;
+                    opt.textContent = c.nombre;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                alert('No se pudieron cargar las ciudades.');
+            });
+    }
+
+    function cargarEquipos() {
+        fetch(apiEquipos)
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar equipos');
+                return r.json();
+            })
+            .then(data => {
+                const select = document.getElementById('codEquipo');
+                select.innerHTML = '<option value="" disabled selected>Seleccione un equipo...</option>';
+
+                data.forEach(e => {
+                    equiposMap[e.codEquipo] = e.nombre;
+                    const opt = document.createElement('option');
+                    opt.value = e.codEquipo;
+                    opt.textContent = e.nombre;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                alert('No se pudieron cargar los equipos.');
+            });
+    }
+
+    function cargarJugadores() {
+        const estado = document.getElementById('estadoTabla');
+        estado.textContent = 'Cargando jugadores...';
+
+        fetch(apiJugadores)
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar jugadores');
+                return r.json();
+            })
+            .then(data => {
+                const tbody = document.getElementById('jugadoresTableBody');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    estado.textContent = 'No hay jugadores registrados.';
+                } else {
+                    estado.textContent = `Total de jugadores: ${data.length}`;
+                }
+
+                data.forEach(j => {
+                    const tr = document.createElement('tr');
+
+                    const tdId = document.createElement('td');
+                    tdId.classList.add('text-center', 'fw-semibold');
+                    tdId.textContent = j.codJugador;
+
+                    const tdNombre = document.createElement('td');
+                    const nombreCompleto = `${(j.nombre1 || '').trim()} ${(j.nombre2 || '').trim()} ${(j.apellido1 || '').trim()} ${(j.apellido2 || '').trim()}`.replace(/\s+/g, ' ').trim();
+                    tdNombre.textContent = nombreCompleto;
+
+                    const tdNumero = document.createElement('td');
+                    tdNumero.textContent = j.numero ?? '';
+
+                    const tdEquipo = document.createElement('td');
+                    tdEquipo.textContent = equiposMap[j.codEquipo] || `ID ${j.codEquipo}`;
+
+                    const tdCiudad = document.createElement('td');
+                    tdCiudad.textContent = ciudadesMap[j.codCiudadNacimiento] || `ID ${j.codCiudadNacimiento}`;
+
+                    const tdFecha = document.createElement('td');
+                    tdFecha.textContent = j.fechaNacimiento || '';
+
+                    const tdAcciones = document.createElement('td');
+                    tdAcciones.classList.add('text-center');
+
+                    const btnEditar = document.createElement('button');
+                    btnEditar.textContent = 'Editar';
+                    btnEditar.className = 'btn btn-sm btn-outline-primary me-2';
+                    btnEditar.onclick = () => editarJugador(j);
+
+                    const btnEliminar = document.createElement('button');
+                    btnEliminar.textContent = 'Eliminar';
+                    btnEliminar.className = 'btn btn-sm btn-outline-danger';
+                    btnEliminar.onclick = () => eliminarJugador(j.codJugador);
+
+                    tdAcciones.appendChild(btnEditar);
+                    tdAcciones.appendChild(btnEliminar);
+
+                    tr.appendChild(tdId);
+                    tr.appendChild(tdNombre);
+                    tr.appendChild(tdNumero);
+                    tr.appendChild(tdEquipo);
+                    tr.appendChild(tdCiudad);
+                    tr.appendChild(tdFecha);
+                    tr.appendChild(tdAcciones);
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                estado.textContent = 'Ocurrió un error al cargar los jugadores.';
+            });
+    }
+
+    function guardarJugador(event) {
+        event.preventDefault();
+
+        const codJugador       = document.getElementById('codJugador').value;
+        const nombre1          = document.getElementById('nombre1').value.trim();
+        const nombre2          = document.getElementById('nombre2').value.trim();
+        const apellido1        = document.getElementById('apellido1').value.trim();
+        const apellido2        = document.getElementById('apellido2').value.trim();
+        const fechaNacimiento  = document.getElementById('fechaNacimiento').value;
+        const numero           = document.getElementById('numero').value;
+        const codCiudadNac     = document.getElementById('codCiudadNacimiento').value;
+        const codEquipo        = document.getElementById('codEquipo').value;
+
+        if (!nombre1 || !apellido1) {
+            alert('Primer nombre y primer apellido son obligatorios.');
+            return;
+        }
+        if (!fechaNacimiento) {
+            alert('La fecha de nacimiento es obligatoria.');
+            return;
+        }
+        if (!numero) {
+            alert('El número de camiseta es obligatorio.');
+            return;
+        }
+        if (!codCiudadNac) {
+            alert('Debe seleccionar ciudad de nacimiento.');
+            return;
+        }
+        if (!codEquipo) {
+            alert('Debe seleccionar un equipo.');
+            return;
+        }
+
+        const jugador = {
+            nombre1: nombre1,
+            nombre2: nombre2 || null,
+            apellido1: apellido1,
+            apellido2: apellido2 || null,
+            fechaNacimiento: fechaNacimiento, // "yyyy-MM-dd"
+            numero: Number(numero),
+            codCiudadNacimiento: Number(codCiudadNac),
+            codEquipo: Number(codEquipo)
+        };
+
+        let url = apiJugadores;
+        let method = 'POST';
+
+        if (codJugador) {
+            url = `${apiJugadores}/${codJugador}`;
+            method = 'PUT';
+        }
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jugador)
+        })
+            .then(r => {
+                if (!r.ok) throw new Error('Error al guardar el jugador');
+                return r.json();
+            })
+            .then(() => {
+                alert(codJugador ? 'Jugador actualizado correctamente' : 'Jugador creado correctamente');
+                limpiarFormulario();
+                cargarJugadores();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Ocurrió un error al guardar el jugador.');
+            });
+    }
+
+    function editarJugador(jugador) {
+        document.getElementById('codJugador').value = jugador.codJugador;
+        document.getElementById('nombre1').value = jugador.nombre1 || '';
+        document.getElementById('nombre2').value = jugador.nombre2 || '';
+        document.getElementById('apellido1').value = jugador.apellido1 || '';
+        document.getElementById('apellido2').value = jugador.apellido2 || '';
+        document.getElementById('fechaNacimiento').value = jugador.fechaNacimiento || '';
+        document.getElementById('numero').value = jugador.numero ?? '';
+        document.getElementById('codCiudadNacimiento').value = jugador.codCiudadNacimiento;
+        document.getElementById('codEquipo').value = jugador.codEquipo;
+
+        document.getElementById('formTitle').textContent = 'Editar Jugador';
+        document.getElementById('btnText').textContent = 'Actualizar';
+    }
+
+    function eliminarJugador(codJugador) {
+        if (!confirm('¿Seguro que deseas eliminar este jugador?')) return;
+
+        fetch(`${apiJugadores}/${codJugador}`, { method: 'DELETE' })
+            .then(r => {
+                if (!r.ok && r.status !== 204) throw new Error('Error al eliminar el jugador');
+                alert('Jugador eliminado correctamente');
+                cargarJugadores();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Ocurrió un error al eliminar el jugador.');
+            });
+    }
+
+    function limpiarFormulario() {
+        document.getElementById('jugadorForm').reset();
+        document.getElementById('codJugador').value = '';
+        document.getElementById('formTitle').textContent = 'Registrar Jugador';
+        document.getElementById('btnText').textContent = 'Guardar';
+    }
+</script>
+
+</body>
+</html>
